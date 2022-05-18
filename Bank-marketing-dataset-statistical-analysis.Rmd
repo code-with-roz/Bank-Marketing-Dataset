@@ -1,5 +1,5 @@
 ---
-title: "MIT 801 Statisical learning assignment"
+title: "Bank-marketing-dataset-statistical-analysis"
 output:
   pdf_document: default
   html_notebook: default
