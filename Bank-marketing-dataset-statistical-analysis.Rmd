@@ -1,0 +1,751 @@
+---
+title: "MIT 801 Statisical learning assignment"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+#Installing packages
+required_packages <- c('MASS', 'rcompanion', 'lsr', 'vcd', 'DescTools', 'Rtools', 'tidyverse', 'caret', 'leaps', 'rio')
+for (p in required_packages) {
+  if(!require(p,character.only = TRUE)) {
+    install.packages(p, dep = TRUE)
+  }
+}
+```
+
+**Defining data set**
+
+```{r}
+#Importing all data
+og_data = read.csv('insurance.csv')
+dataset = og_data
+check_dataset = read.csv('check2021.csv')
+
+
+#Encoding categorical data
+table(dataset$job)
+dataset$job = factor(dataset$job,
+                       levels = c('unknown', 'admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed'))
+
+table(dataset$marital)
+dataset$marital = factor(dataset$marital,
+                       levels = c('divorced', 'married', 'single'))
+
+table(dataset$education)
+dataset$education = factor(dataset$education,
+                       levels = c('unknown','primary', 'secondary', 'tertiary'))
+
+
+table(dataset$default)
+dataset$default = factor(dataset$default,
+                       levels = c('no', 'yes'),
+                       labels = c(0, 1))
+
+
+table(dataset$housing)
+dataset$housing = factor(dataset$housing,
+                       levels = c('no', 'yes'),
+                       labels = c(0, 1))
+
+
+table(dataset$loan)
+dataset$loan = factor(dataset$loan,
+                       levels = c('no', 'yes'),
+                       labels = c(0, 1))
+
+table(dataset$contact)
+dataset$contact = factor(dataset$contact,
+                       levels = c('unknown', 'cellular', 'telephone'))
+
+
+table(dataset$month)
+dataset$month = factor(dataset$month,
+                       levels = c('jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul','aug', 'sep', 'oct', 'nov', 'dec'))
+
+table(dataset$poutcome)
+dataset$poutcome = factor(dataset$poutcome,
+                       levels = c( 'unknown', 'failure', 'other', 'success'))
+
+table(dataset$y)
+dataset$y = factor(dataset$y,
+                       levels = c('no', 'yes'),
+                       labels = c(0, 1))
+
+
+#Splitting the data into training and testing set
+table(dataset$Group)
+
+training_data = subset(dataset, dataset$Group=="Training")
+testing_data = subset(dataset, dataset$Group=="Test")
+
+```
+
+**Variable Correlation check**
+
+Categorical data correlation check (Contingency coefficient C)
+
+```{r}
+#Contingency coefficient C to measure the possible correlation between the categorical data
+
+
+library(MASS)
+library(DescTools)
+
+#job
+# chisq.test(dataset$job, dataset$marital)
+ContCoef(dataset$job, dataset$marital, correct = TRUE)
+
+#education
+ContCoef(dataset$education, dataset$job, correct = TRUE)
+ContCoef(dataset$education, dataset$marital, correct = TRUE)
+
+# chisq.test(dataset$education, dataset$job)
+# chisq.test(dataset$education, dataset$marital)
+
+```
+
+```{r}
+#default
+ContCoef(dataset$default, dataset$job, correct = TRUE)
+ContCoef(dataset$default, dataset$marital, correct = TRUE)
+ContCoef(dataset$default, dataset$education, correct = TRUE)
+
+# chisq.test(dataset$default, dataset$job)
+# chisq.test(dataset$default, dataset$marital)
+# chisq.test(dataset$default, dataset$education)
+```
+
+```{r}
+#housing
+ContCoef(dataset$housing, dataset$job, correct = TRUE)
+ContCoef(dataset$housing, dataset$marital, correct = TRUE)
+ContCoef(dataset$housing, dataset$education, correct = TRUE)
+ContCoef(dataset$housing, dataset$default, correct = TRUE)
+
+chisq.test(dataset$housing, dataset$job)
+chisq.test(dataset$housing, dataset$marital)
+chisq.test(dataset$housing, dataset$education)
+chisq.test(dataset$housing, dataset$default)
+```
+
+```{r}
+#loan
+ContCoef(dataset$loan, dataset$job, correct = TRUE)
+ContCoef(dataset$loan, dataset$marital, correct = TRUE)
+ContCoef(dataset$loan, dataset$education, correct = TRUE)
+ContCoef(dataset$loan, dataset$default, correct = TRUE)
+ContCoef(dataset$loan, dataset$housing, correct = TRUE)
+
+# chisq.test(dataset$loan, dataset$job)
+# chisq.test(dataset$loan, dataset$marital)
+# chisq.test(dataset$loan, dataset$education)
+# chisq.test(dataset$loan, dataset$default)
+# chisq.test(dataset$loan, dataset$housing)
+
+```
+
+```{r}
+#contact
+ContCoef(dataset$contact, dataset$job, correct = TRUE)
+ContCoef(dataset$contact, dataset$marital, correct = TRUE)
+ContCoef(dataset$contact, dataset$education, correct = TRUE)
+ContCoef(dataset$contact, dataset$default, correct = TRUE)
+ContCoef(dataset$contact, dataset$housing, correct = TRUE)
+ContCoef(dataset$contact, dataset$loan, correct = TRUE)
+
+# chisq.test(dataset$contact, dataset$job)
+# chisq.test(dataset$contact, dataset$marital)
+# chisq.test(dataset$contact, dataset$education)
+# chisq.test(dataset$contact, dataset$default)
+# chisq.test(dataset$contact, dataset$housing)
+# chisq.test(dataset$contact, dataset$loan)
+```
+
+```{r}
+#month
+ContCoef(dataset$month, dataset$job, correct = TRUE)
+ContCoef(dataset$month, dataset$marital, correct = TRUE)
+ContCoef(dataset$month, dataset$education, correct = TRUE)
+ContCoef(dataset$month, dataset$default, correct = TRUE)
+ContCoef(dataset$month, dataset$housing, correct = TRUE)
+ContCoef(dataset$month, dataset$loan, correct = TRUE)
+ContCoef(dataset$month, dataset$contact, correct = TRUE)
+
+
+# cisq.test(dataset$month, dataset$job)
+# chisq.test(dataset$month, dataset$marital)
+# chisq.test(dataset$month, dataset$education)
+# chisq.test(dataset$month, dataset$default)
+# chisq.test(dataset$month, dataset$housing)
+# chisq.test(dataset$month, dataset$loan)
+# chisq.test(dataset$month, dataset$contact)
+```
+
+```{r}
+#poutcome
+ContCoef(dataset$poutcome, dataset$job, correct = TRUE)
+ContCoef(dataset$poutcome, dataset$marital, correct = TRUE)
+ContCoef(dataset$poutcome, dataset$education, correct = TRUE)
+ContCoef(dataset$poutcome, dataset$default, correct = TRUE)
+ContCoef(dataset$poutcome, dataset$housing, correct = TRUE)
+ContCoef(dataset$poutcome, dataset$loan, correct = TRUE)
+ContCoef(dataset$poutcome, dataset$contact, correct = TRUE)
+ContCoef(dataset$poutcome, dataset$month, correct = TRUE)
+
+
+# chisq.test(dataset$poutcome, dataset$job)
+# chisq.test(dataset$poutcome, dataset$marital)
+# chisq.test(dataset$poutcome, dataset$education)
+# chisq.test(dataset$poutcome, dataset$default)
+# chisq.test(dataset$poutcome, dataset$housing)
+# chisq.test(dataset$poutcome, dataset$loan)
+# chisq.test(dataset$poutcome, dataset$contact)
+# chisq.test(dataset$poutcome, dataset$month)
+```
+
+```{r}
+#y
+ContCoef(dataset$y, dataset$job, correct = TRUE)
+ContCoef(dataset$y, dataset$marital, correct = TRUE)
+ContCoef(dataset$y, dataset$education, correct = TRUE)
+ContCoef(dataset$y, dataset$default, correct = TRUE)
+ContCoef(dataset$y, dataset$housing, correct = TRUE)
+ContCoef(dataset$y, dataset$loan, correct = TRUE)
+ContCoef(dataset$y, dataset$contact, correct = TRUE)
+ContCoef(dataset$y, dataset$month, correct = TRUE)
+ContCoef(dataset$y, dataset$poutcome, correct = TRUE)
+
+# chisq.test(dataset$y, dataset$job)
+# chisq.test(dataset$y, dataset$marital)
+# chisq.test(dataset$y, dataset$education)
+# chisq.test(dataset$y, dataset$default)
+# chisq.test(dataset$y, dataset$housing)
+# chisq.test(dataset$y, dataset$loan)
+# chisq.test(dataset$y, dataset$contact)
+# chisq.test(dataset$y, dataset$month)
+# chisq.test(dataset$y, dataset$poutcome)
+```
+
+Categorical and numeric data correlation check (One way ANOVA test)
+
+-   Age
+
+```{r}
+#Contacting a one-way ANOVA test to determine if there is a correlation between the categorical and numeric values
+
+#Age
+aov_age = aov(dataset$age ~ dataset$job + dataset$marital + dataset$education + dataset$default + dataset$housing + dataset$loan + dataset$contact + dataset$month + dataset$poutcome + dataset$y)
+summary(aov_age)
+
+```
+
+```{r}
+aov_age_y = aov(dataset$previous ~ dataset$job)
+summary(aov_age_y)
+```
+
+```{r}
+#balance
+aov_balance = aov(dataset$balance ~ dataset$job + dataset$marital + dataset$education + dataset$default + dataset$housing + dataset$loan + dataset$contact + dataset$month + dataset$poutcome + dataset$y)
+summary(aov_balance)
+```
+
+```{r}
+#duration
+aov_duration = aov(dataset$duration ~ dataset$job + dataset$marital + dataset$education + dataset$default + dataset$housing + dataset$loan + dataset$contact + dataset$month + dataset$poutcome + dataset$y)
+summary(aov_duration)
+```
+
+```{r}
+#campaign
+aov_campaign = aov(dataset$campaign ~ dataset$job + dataset$marital + dataset$education + dataset$default + dataset$housing + dataset$loan + dataset$contact + dataset$month + dataset$poutcome + dataset$y)
+summary(aov_campaign)
+```
+
+```{r}
+#pdays
+aov_pdays = aov(dataset$pdays ~ dataset$job + dataset$marital + dataset$education + dataset$default + dataset$housing + dataset$loan + dataset$contact + dataset$month + dataset$poutcome + dataset$y)
+summary(aov_pdays)
+```
+
+```{r}
+#previous
+aov_previous = aov(dataset$previous ~ dataset$job + dataset$marital + dataset$education + dataset$default + dataset$housing + dataset$loan + dataset$contact + dataset$month + dataset$poutcome + dataset$y)
+summary(aov_previous)
+```
+
+Correlation between the numeric variables correlation check
+
+```{r}
+#Correlation only on the numeric data
+corr_data =round(cor(dataset[, unlist(lapply(dataset, is.numeric))], use = "complete.obs"), 2)
+
+
+#Correlation matrix (lower tri)
+# install.packages("Rtools")
+upper<-corr_data
+upper[upper.tri(corr_data)]<-""
+upper<-as.data.frame(upper)
+upper
+
+# 
+# 
+# #Plot the correlation results
+# # install.packages("corrplot")
+library(corrplot)
+
+corrplot(corr_data)
+
+
+
+
+```
+
+**Varaible selection and model building**
+
+Fitting the entire model while converting the output variable to an equidistant numerical value
+
+```{r}
+#Fitting the data
+training_data_fit = subset(training_data, select = -Group)
+training_data_fit = subset(training_data_fit, select = -Seq.nr)
+training_data_fit = subset(training_data_fit, select = -day)
+
+#changing factors to numeric values
+training_data_fit = as.data.frame(training_data_fit)
+
+training_data_fit$y = as.numeric(training_data_fit$y)
+
+#All varaibles included 
+linear_model = lm(y~., data= training_data_fit)
+summary(linear_model)
+
+#Variance inflation factor
+install.packages("car")
+library(car)
+vif = round(vif(linear_model),2)
+vif
+
+```
+
+The original model with all variable fit shows that all variables (excluding jobs) are significant. However, the model fit is only (based on the adjusted R-squared) 30%, meaning that it is a poor fit. This was expected given y is a categorical variable, therefore a linear model would be expected to perform poorly.
+
+In addition, the measure of the variance inflation factor shows that the variables "poutcome" and "pdays" further prove the multicolinearity between these two variables. Exclsion from the regression process should be considered.
+
+Furthermore, there is the note to consider from the data description that it was advised that the variable "duration" be excluded from the regression process because it has a significant effect on the outcome variable. Therefore, the next step was to refit the model excluding the "duration" variable. And the following results were obtained:
+
+```{r}
+#Model 02
+#Without duration 
+training_data_fit02 = subset(training_data_fit, select = -duration)
+
+linear_model02 = lm(y~., data= training_data_fit02)
+summary(linear_model02)
+```
+
+The variables significance did not change, including the insignificance of the jobs variable, however the model fit reduced drastically to approximately 16%. By removing the "duration" variable a large percentage of the models ability to explain the variance of the outcome was lost. However, the model is still seen to be significant.
+
+**Modeling the best possible combination of input variables**
+
+\*Assuming the output y is numeric in this case. Taking note that this assumption will affect the validity of the results found.
+
+```{r}
+#Best subset Regression 
+
+library(tidyverse)
+library(caret)
+library(leaps)
+
+#Finding best model
+models <- regsubsets(y~., data = training_data_fit02, nvmax = 14)
+summary(models)
+
+#Choosing the optimal model
+res.sum <- summary(models)
+data.frame(
+  Adj.R2 = which.max(res.sum$adjr2),
+  CP = which.min(res.sum$cp),
+  BIC = which.min(res.sum$bic)
+)
+
+```
+
+The formula for the best model is presented below:
+
+```{r}
+# Helper function
+# id: model id
+# object: regsubsets object
+# data: data used to fit regsubsets
+# outcome: outcome variable
+get_model_formula <- function(id, object, outcome){
+  # get models data
+  models <- summary(object)$which[id,-1]
+  # Get outcome variable
+  #form <- as.formula(object$call[[2]])
+  #outcome <- all.vars(form)[1]
+  # Get model predictors
+  predictors <- names(which(models == TRUE))
+  predictors <- paste(predictors, collapse = "+")
+  # Build model formula
+  as.formula(paste0(outcome, "~", predictors))
+}
+
+get_model_formula(14, models, "y")
+
+
+```
+
+Considering this outcome, the model was fit again considering only the listed variables: marital, housing, loan, contact, month, campaign and poutcomes
+
+```{r}
+
+linear_model04 = lm(y~ marital + housing + loan + contact + month + campaign + poutcome, data= training_data_fit02)
+summary(linear_model04)
+```
+
+The model fit is not great, with an adjusted R-squared of 16%, which is actually slightly poorer than the initial model with all inputs included (except for duration). This difference in performance is only slight, therefore it was decided that the smaller model would be chosen to conduct the testing. The reasoning being that it's better to have a smaller model with only the significant variables included instead of having a blotted model with all variables, while those variables only contribute to a very small fraction of the model fit.
+
+The coefficients obtained from the model fit are presented below:
+
+```{r}
+#Final model coefficients
+coef(models, 14)
+```
+
+Married people are less likely to accept the new product (-B) unlike single people whose coefficient is positive (+B).
+
+People with a housing loan and a general personal loan are less likely to accept the new product
+
+Contacting a person via cellphone or telephone makes them more likely to say yes to the new product.
+
+The months when people are more likely to say yes to the product are March, April, May, June, Sept, Oct and December, based on the results of the "best model" choice. These months correspond with spring, summer, autumn and the festive season in Portugal (the source of this data). Perhaps during these periods people are more receptive and active and would therefore be more willing to take on a new product.
+
+According to the results from the model fit, people were less likely to say yes to the product if they had already been contacted previously regarding a previous campaign. In the same sentiment, if the outcome of the call for the previous campaign was a failure then the client would still be less likely to say yes to this new product. However, if the outcome of the previous campaign not a failure ("other" or "success") then the client would be more likely to say yes to the new product.
+
+The model was then carried forward for the testing process:
+
+```{r}
+#Testing the model performance
+
+#Preping training data
+training_data_pred = subset(training_data_fit02, select = -age)
+training_data_pred = subset(training_data_pred, select = -job)
+training_data_pred = subset(training_data_pred, select = -education)
+training_data_pred = subset(training_data_pred, select = -default)
+training_data_pred = subset(training_data_pred, select = -balance)
+training_data_pred = subset(training_data_pred, select = -pdays)
+training_data_pred = subset(training_data_pred, select = -previous)
+
+
+
+#Preping testing data
+testing_data02 = subset(testing_data, select = -age)
+testing_data02 = subset(testing_data02, select = -job)
+testing_data02 = subset(testing_data02, select = -education)
+testing_data02 = subset(testing_data02, select = -default)
+testing_data02 = subset(testing_data02, select = -balance)
+testing_data02 = subset(testing_data02, select = -pdays)
+testing_data02 = subset(testing_data02, select = -previous)
+testing_data02 = subset(testing_data02, select = -Group)
+testing_data02 = subset(testing_data02, select = -Seq.nr)
+testing_data02 = subset(testing_data02, select = -day)
+testing_data02 = subset(testing_data02, select = -duration)
+
+
+```
+
+```{r}
+# Model test on training data
+y_pred_train = predict(linear_model04, newdata = training_data_pred)
+
+
+
+#Test data modification
+#changing factors to numeric values
+testing_data02 = as.data.frame(testing_data02)
+testing_data02$y = as.numeric(testing_data02$y)
+
+
+
+# Model test on testing data
+y_pred_test = predict(linear_model04, newdata = testing_data02)
+
+
+```
+
+```{r}
+# Model accuracy measure 
+# RMSE - Root of the mean squared error
+#Training data
+y_pred_train_rmse <-training_data_pred %>%
+  mutate(y_pred_train)
+
+mse_train <- y_pred_train_rmse %>%
+  mutate(error = y_pred_train - y,
+         sq.error = error^2) %>%
+  summarise(mse_train = mean(sq.error))
+
+rmse_train <- sqrt(mse_train)
+rmse_train
+
+```
+
+```{r}
+# Check rmse on Test data
+
+y_pred_test_rmse <- testing_data %>%
+  mutate(y_pred_test)
+
+rmse_test <- sqrt(mean((y_pred_test - testing_data02$y)^2))
+rmse_test
+```
+
+The RMSE for both the training and test data set are approximately equal, that means in all fairness the model has performed well in predicting the outcomes based on it's training. However, it should be noted that the model was fit with the assumption that the *y outcome was an ordered pair,* and thus transformed to a numeric value to conduct the linear regression. Therefore, predictions made from this model should be cautionary. In all intents and purposes the model served well in identifying the key customer segment that may be more receptive to new products and the best times to contact clients. Therefore, the results of the model can be possibly used in client engagement strategies.
+
+The *duration* variable was used to benchmark whether the predictions were within the ball park of being realistic.
+
+```{r}
+#Correlation between the test duration and test y outcome
+aov_duration_y_test = aov(testing_data$duration ~ testing_data$y)
+summary(aov_duration_y_test)
+
+
+#Correlation between the test duration data and the predicted test y outcomes 
+#change predicted y back to categorical data 0 - 1 = 0 ("no") and 1-2 = 1 ("yes")
+
+Cat.y <- cut(y_pred_test_rmse$y_pred_test, breaks = c(0,1,2), labels = c("0", "1"))
+
+aov_duration_y_pred_test = aov(testing_data$duration ~ y_pred_test_rmse$y_pred_test)
+summary(aov_duration_y_pred_test)
+
+y_pred_test_rmse <- y_pred_test_rmse %>%
+  mutate(Cat.y)
+
+
+
+```
+
+```{r}
+#Bar plot of the actual y values and predicted y values
+
+actual_pred_outcome <- subset(y_pred_test_rmse, select=c("y", "Cat.y"))
+
+table(actual_pred_outcome$y)
+table(actual_pred_outcome$Cat.y)
+# barplot(table(actual_pred_outcome), beside= TRUE, col = c("blue", "red"))
+
+# myTable <- table(actual_pred_outcome$y, actual_pred_outcome$Cat.y)
+# myTable2 <- prop.table(myTable, 1)
+# 
+# barplot(myTable2, beside=TRUE, legend = rownames(myTable))
+
+
+
+```
+
+The results show that the model grossly overestimates the outcome of a "yes" and grossly underestimates the outcome of a "no". This is understandable given the model fit was only 16%. In addition, using the *duration* variable as benchmark, it is clear that the correlation between the predicted values and *duration* do not hold. Therefore, the data cannot be modeled accurately using a linear model.
+
+However, observing the results further, it can be seen that the predicted outcomes mirror the actual outcome. Therefore, switching the outcome labels around may fix the inaccuracy.
+
+```{r}
+# Switching the outcomes arround
+actual_pred_outcome$Cat.y = factor(actual_pred_outcome$Cat.y,
+                       levels = c('0', '1'),
+                       labels = c(1, 0))
+
+table(actual_pred_outcome$y)
+table(actual_pred_outcome$Cat.y)
+```
+
+ROC curve for test data
+
+```{r}
+# ROC Curves after switch)
+
+# Test data
+train_tab = table(predicted = y_pred_test_rmse$Cat.y, actual = y_pred_test_rmse$y)
+# 
+library(caret)
+train_con_mat = confusionMatrix(train_tab, positive = "1")
+c(train_con_mat$overall["Accuracy"],
+  train_con_mat$byClass["Sensitivity"],
+  train_con_mat$byClass["Specificity"])
+
+library(pROC)
+# test_prob = predict(model_glm, newdata = default_tst, type = "response")
+test_roc = roc(testing_data02$y ~ y_pred_test, plot = TRUE, print.auc = TRUE)
+
+as.numeric(test_roc$auc)
+```
+
+```{r}
+#Exploring this further using the Training dataset prediction vs actuals
+Cat.y_train <- cut(y_pred_train_rmse$y_pred_train, breaks = c(0,1,2), labels = c("0", "1"))
+
+training_data_pred_y <- training_data %>%
+  mutate(Cat.y_train)
+
+actual_pred_outcome_train <- subset(training_data_pred_y, select=c("y", "Cat.y_train"))
+
+table(actual_pred_outcome_train$y)
+table(actual_pred_outcome_train$Cat.y_train)
+
+
+```
+
+```{r}
+# Switching the outcomes arround
+actual_pred_outcome_train$Cat.y_train = factor(actual_pred_outcome_train$Cat.y_train,
+                       levels = c('0', '1'),
+                       labels = c(1, 0))
+
+table(actual_pred_outcome_train$y)
+table(actual_pred_outcome_train$Cat.y_train)
+```
+
+The same pattern of accuracy is observed. Therefore, when the prediction values are relabeled to the opposite outcome the model accuracy improves drastically. The ROC curves are presented below (before the label switch and after the label switch)
+
+```{r}
+# ROC Curves (before switch and after switch)
+
+# Test data
+train_tab = table(predicted = model_glm_pred, actual = default_trn$default)
+# 
+# library(caret)
+# train_con_mat = confusionMatrix(train_tab, positive = "Yes")
+# c(train_con_mat$overall["Accuracy"], 
+#   train_con_mat$byClass["Sensitivity"], 
+#   train_con_mat$byClass["Specificity"])
+
+# library(pROC)
+# test_prob = predict(model_glm, newdata = default_tst, type = "response")
+# test_roc = roc(default_tst$default ~ test_prob, plot = TRUE, print.auc = TRUE)
+
+# as.numeric(test_roc$auc)
+```
+
+\*a good model will have a high AUC, that is often as possible a high sensitivity and specificity
+
+The regression model that would be better suited to this type of data (that contains a mixture of categorical and numerical data, as well as having a categorical outcome) would be the logistic regression model.
+
+**LOGISTIC REGRESSION**
+
+\*Introduction to chapter
+
+**Variable selection and model building**
+
+```{r}
+#Initial model from training dataset
+#Fitting initial model
+
+
+df.train = subset(training_data, select = -c(Group,Seq.nr,day,duration))
+
+
+log_mod <- glm(y~.,data = df.train, family = "binomial")
+summary(log_mod)
+
+
+
+```
+
+Choosing the best model
+
+```{r}
+library(MASS)
+log_models <- stepAIC(log_mod, direction = 'backward', trace = FALSE)
+log_models
+```
+
+Conducting the final fit with the best model
+
+```{r}
+log_mod02 <- glm(formula = y ~ job + marital + education + balance + housing + 
+    loan + contact + month + campaign + poutcome, family = "binomial", 
+    data = df.train)
+summary(log_mod02)
+```
+
+Predictions using test data
+
+```{r}
+log_test_data = subset(testing_data, select = -c(Group, Seq.nr, age,default, day, duration, pdays, previous))
+
+
+log_pred_prob = data.frame(probs = predict(log_mod02, 
+                                       newdata = log_test_data, 
+                                       type="response"))
+```
+
+```{r}
+log_y_pred = log_pred_prob %>%
+  mutate(pred_y = ifelse(probs>.5, "1", "0"))
+
+
+log_y_pred = cbind(log_test_data, log_y_pred)
+
+table(log_y_pred$y)
+table(log_y_pred$pred_y)
+
+
+```
+
+ROC curve
+
+```{r}
+# ROC Curves after switch)
+
+# Test data
+train_tab_log = table(predicted = log_y_pred$pred_y, actual = log_y_pred$y)
+# 
+library(caret)
+train_con_mat_log = confusionMatrix(train_tab_log, positive = "1")
+c(train_con_mat_log$overall["Accuracy"],
+  train_con_mat_log$byClass["Sensitivity"],
+  train_con_mat_log$byClass["Specificity"])
+
+library(pROC)
+test_prob_log = predict(log_mod02, newdata = log_test_data, type = "response")
+test_roc_log = roc(log_test_data$y ~ test_prob_log, plot = TRUE, print.auc = TRUE)
+
+as.numeric(test_roc_log$auc)
+
+```
+
+**Predictions using New data**
+
+```{r}
+check_data_pred = subset(check_dataset, select = -c(Group, Seq.nr, age,default, day, duration, pdays, previous))
+
+
+
+
+check_data_pred$housing = factor(check_data_pred$housing,
+                       levels = c('no', 'yes'),
+                       labels = c(0, 1))
+
+check_data_pred$loan = factor(check_data_pred$loan,
+                       levels = c('no', 'yes'),
+                       labels = c(0, 1))
+
+check_data_pred$contact = factor(check_data_pred$contact,
+                       levels = c('unknown', 'cellular', 'telephone'))
+
+
+
+check_data_pred_prob = data.frame(probs = predict(log_mod02, 
+                                       newdata = check_data_pred, 
+                                       type="response"))
+
+check_data_pred = check_data_pred_prob %>%
+  mutate(pred_y = ifelse(probs>.5, "1", "0"))
+
+
+check_data_pred = cbind(check_dataset, check_data_pred)
+
+
+table(check_data_pred$pred_y)
+```
